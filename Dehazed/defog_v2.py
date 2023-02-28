@@ -5,11 +5,12 @@
 # @Project : 去雾
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import math
-from skimage.metrics import structural_similarity as sk_cpt_ssim
-import os
 
+# SSIM评估
+from skimage.metrics import structural_similarity as sk_cpt_ssim
+
+# 导向滤波（待研究）
 def guided_filter(I,p,win_size,eps):
 
     mean_I = cv2.blur(I,(win_size,win_size))
@@ -33,10 +34,10 @@ def get_min_channel(img):
     return np.min(img,axis=2)
 def min_filter(img,r):
     kernel = np.ones((2*r-1,2*r-1))
-    return cv2.erode(img,kernel)#最小值滤波器，可用腐蚀替代
+    return cv2.erode(img,kernel)    #最小值滤波器，可用腐蚀替代
 def get_A(img_haze,dark_channel,bins_l):
-    hist,bins = np.histogram(dark_channel,bins=bins_l)#得到直方图
-    d = np.cumsum(hist)/float(dark_channel.size)#累加
+    hist,bins = np.histogram(dark_channel,bins=bins_l)  #得到直方图
+    d = np.cumsum(hist)/float(dark_channel.size)    #累加
     # print(bins)
     threshold=0
     for i in range(bins_l-1,0,-1):
@@ -55,6 +56,12 @@ def get_t(img_haze,A,t0=0.1,w=0.95):
     t = 1-w*out/A #需要乘上一系数w，为远处的物体保留少量的雾
     t = np.clip(t,t0,1)#论文4.4所提到t(x)趋于0容易产生噪声，所以设置一最小值0.1
     return t
+
+# PSNR评估
+# PSNR高于40dB说明图像质量极好（即非常接近原始图像），
+# 在30—40dB通常表示图像质量是好的（即失真可以察觉但可以接受），
+# 在20—30dB说明图像质量差；
+# 最后，PSNR低于20dB图像不可接受
 def PSNR(target,ref):
     #必须归一化
     target=target/255.0
@@ -86,9 +93,10 @@ def deFogging(input_img, output_path_, index):
 
     cv2.imwrite(output_path_ + "/" + "result_" + str(index) + ".jpg",J)
 
-    #评估
     psnr = PSNR(J,I*255)
     print(f"PSNR:{psnr}")
+
+    # ssim评估，值越接近1图像相似度越高
     ssim = sk_cpt_ssim(J,I*255, win_size=11, data_range=255, multichannel=True)
     print(f"ssim:{ssim}")
 
