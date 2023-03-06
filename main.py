@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from torchvision import transforms
 from torchvision.utils import save_image
+import utiles
 
 # 输入图片路径
 input_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/testdata'
@@ -14,6 +15,8 @@ model_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/Derain/Derain_p
 output_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/results'
 # 缓存路径
 temp_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/temp/temp_img.jpg'
+# 拉普拉斯方差阈值
+THRESHOLD = 100
 
 # 主函数
 if __name__ == '__main__':
@@ -37,8 +40,7 @@ if __name__ == '__main__':
     for input, label in dataloader:
         cnt += 1
         # input = input.to('cuda')        # 用cuda加速测试，也可以不用，不用cuda加速测试速度会很慢
-
-        print('finished:{:.2f}%'.format(cnt*100/total))
+        print("Epoch: " + str(cnt), )
 
         with torch.no_grad():
             output_image, _ = net(input) # 输出的是张量
@@ -50,19 +52,24 @@ if __name__ == '__main__':
 
             # print(output_image)   # 用于测试
 
+        # print(output_image)   # 用于测试
+
         # 读取缓存中的图片
         output_image = cv2.imread(temp_path)
-
-        # print(output_image)   # 用于测试
 
         '''
         此处添加模糊识别算法
         '''
+        utiles.LaplacianValue(output_image, THRESHOLD=100)
 
         # 去雾
-        defog.deFogging(output_image, output_path, cnt)
+        output_image = defog.deFogging(output_image)
 
         '''
         此处添加超分辨率重建代码
         '''
 
+        utiles.save_img(output_image, output_path, cnt)
+        
+        print('finished:{:.2f}%'.format(cnt*100/total))
+        print("")
