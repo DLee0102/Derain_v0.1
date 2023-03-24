@@ -6,15 +6,18 @@ import numpy as np
 from torchvision import transforms
 from torchvision.utils import save_image
 import utiles
+import super_resolution.superResolution as srrnet
 
 # 输入图片路径
 input_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/testdata'
 # 模型加载路径
 model_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/Derain/Derain_platform/result_Version6/model_best.ckpt'
+srmodel_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/super_resolution/model_3_23/savecheckpoint_srresnet3.pth'
 # 图片输出路径
-output_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/results'
+output_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/results_withsr'
 # 缓存路径
-temp_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/temp/temp_img.jpg'
+temp_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/temp/temp/temp_img.jpg'
+srtemp_path = '/Users/dingli/Desktop/python-pro/defog/Derain_v0.1/temp'
 # 拉普拉斯方差阈值
 THRESHOLD = 100
 
@@ -64,12 +67,18 @@ if __name__ == '__main__':
 
         # 去雾
         output_image = defog.deFogging(output_image)
+        cv2.imwrite(temp_path, output_image)
 
         '''
         此处添加超分辨率重建代码
         '''
+        srdataloader, srnet = srrnet.prepareModel(srtemp_path, srmodel_path)
+        for input, label in srdataloader:
+            with torch.no_grad():
+                output_image = srnet(input)
 
-        utiles.save_img(output_image, output_path, cnt)
+        utiles.save_tensor(output_image, output_path, cnt)
+        # utiles.save_img(output_image, output_path, cnt)
         
         print('finished:{:.2f}%'.format(cnt*100/total))
         print("")
